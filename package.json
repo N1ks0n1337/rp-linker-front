@@ -14,10 +14,16 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "@react-three/fiber": "^9.1.2",
+    "@react-three/postprocessing": "^3.0.4",
     "axios": "^1.9.0",
+    "framer-motion": "^12.11.4",
+    "postprocessing": "^6.37.3",
     "react": "^19.0.0",
+    "react-bits": "^1.0.5",
     "react-dom": "^19.0.0",
-    "react-dropzone": "^14.3.8"
+    "react-dropzone": "^14.3.8",
+    "three": "^0.176.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

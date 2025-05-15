@@ -1,47 +1,41 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
-  Box,
-  Button,
-  Link,
-  Paper,
-  Typography,
-  CircularProgress,
+  Box, Button, Paper, Typography, Link, TextField, CircularProgress
 } from '@mui/material';
+import { motion } from 'framer-motion';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import {
-  uploadResourcePack as uploadAPI,
-  UploadResponse,
-} from '../api';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import { uploadResourcePack, UploadResponse } from '../api';
 
 export const ResourcePackUploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
 
-  const onDrop = useCallback((accepted: File[]) => {
-    setError(null);
+  const onDrop = useCallback((files: File[]) => {
+    setError('');
     setResult(null);
-    if (accepted.length) setFile(accepted[0]);
+    if (files.length) setFile(files[0]);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
     accept: { 'application/zip': ['.zip'] },
-    maxSize: 50 * 1024 * 1024, // 50 МБ
+    maxSize: 95 * 1024 * 1024,
   });
 
   const handleUpload = async () => {
     if (!file) {
-      setError('Выберите ZIP-файл.');
+      setError('Пожалуйста, выберите ZIP-файл.');
       return;
     }
     setLoading(true);
-    setError(null);
+    setError('');
     try {
-      const resp = await uploadAPI(file);
+      const resp = await uploadResourcePack(file);
       setResult(resp.data);
     } catch (e: any) {
       setError(e.response?.data?.detail || e.message);
@@ -50,64 +44,151 @@ export const ResourcePackUploader: React.FC = () => {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   return (
-    <Paper elevation={3} sx={{ p: 4, maxWidth: 600, mx: 'auto', mt: 6 }}>
-      <Typography variant="h5" gutterBottom>
-        Загрузка Resource Pack
-      </Typography>
-
-      <Box
-        {...getRootProps()}
-        sx={{
-          border: '2px dashed',
-          borderColor: isDragActive ? 'primary.main' : 'grey.400',
-          borderRadius: 2,
-          p: 4,
-          textAlign: 'center',
-          cursor: 'pointer',
-        }}
-      >
-        <input {...getInputProps()} />
-        <CloudUploadIcon sx={{ fontSize: 48, color: 'grey.600' }} />
-        <Typography mt={1}>
-          {isDragActive
-            ? 'Отпустите файл...'
-            : 'Перетащите сюда ZIP-файл или кликните'}
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      style={{ width: '100%', maxWidth: 800 }}
+    >
+      <Paper elevation={6} sx={{ p: 4, width: '100%' }}>
+        <Typography variant="h5" gutterBottom textAlign="center">
+          Загрузка Minecraft Resource Pack
         </Typography>
-        {file && (
-          <Typography variant="body2" mt={1}>
-            Выбран: {file.name}
-          </Typography>
-        )}
-      </Box>
 
-      <Box mt={3}>
-        <Button
-          variant="contained"
-          onClick={handleUpload}
-          disabled={loading || !file}
-          startIcon={loading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 4,
+            mt: 2,
+            alignItems: 'center'
+          }}
         >
-          {loading ? 'Загрузка...' : 'Загрузить'}
-        </Button>
-      </Box>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Box
+              {...getRootProps()}
+              sx={{
+                width: '100%',
+                maxWidth: 360,
+                mx: 'auto',
+                border: '2px dashed',
+                borderColor: isDragActive ? 'primary.main' : 'grey.600',
+                borderRadius: 2,
+                p: 4,
+                textAlign: 'center',
+                cursor: 'pointer',
+                mb: 2,
+              }}
+            >
+              <input {...getInputProps()} />
+              <CloudUploadIcon sx={{ fontSize: 48, color: 'grey.500' }} />
+              <Typography mt={2}>
+                {isDragActive
+                  ? 'Отпустите файл здесь...'
+                  : 'Перетащите ZIP-файл или кликните'}
+              </Typography>
+              {file && (
+                <Typography variant="body2" mt={1} sx={{ wordBreak: 'break-all' }}>
+                  {file.name}
+                </Typography>
+              )}
+            </Box>
 
-      {error && (
-        <Typography color="error" mt={2}>
-          Ошибка: {error}
-        </Typography>
-      )}
+            <Box sx={{ width: '100%', maxWidth: 360, mx: 'auto', textAlign: 'center' }}>
+              <Button
+                variant="contained"
+                onClick={handleUpload}
+                disabled={loading || !file}
+                startIcon={loading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+              >
+                {loading ? 'Загрузка...' : 'Загрузить'}
+              </Button>
+            </Box>
 
-      {result && (
-        <Box mt={3}>
-          <Typography>Ссылка для скачивания:</Typography>
-          <Link href={result.download_url} target="_blank" rel="noopener">
-            {result.download_url}
-          </Link>
-          <Typography mt={1}>SHA-1: {result.sha1}</Typography>
-          <Typography mt={1}>Delete key: {result.delete_key}</Typography>
+            {error && (
+              <Typography color="error" mt={2} textAlign="center">
+                {error}
+              </Typography>
+            )}
+          </Box>
+
+          {result && (
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="h6" gutterBottom>
+                Результат
+              </Typography>
+
+              <Box display="flex" alignItems="center" gap={1} mb={1} sx={{ flexWrap: 'wrap' }}>
+                <Link
+                  href={result.download_url}
+                  target="_blank"
+                  underline="hover"
+                  sx={{ wordBreak: 'break-all' }}
+                >
+                  Скачать ресурс-пак
+                </Link>
+                <Button
+                  size="small"
+                  onClick={() => copyToClipboard(result.download_url)}
+                  startIcon={<FileCopyIcon />}
+                >
+                  Копировать
+                </Button>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1} mb={1} sx={{ flexWrap: 'wrap' }}>
+                <Typography sx={{ wordBreak: 'break-all' }}>
+                  SHA-1: {result.sha1}
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={() => copyToClipboard(result.sha1)}
+                  startIcon={<FileCopyIcon />}
+                >
+                  Копировать
+                </Button>
+              </Box>
+
+              <Typography mb={1}>Для server.properties:</Typography>
+              <TextField
+                multiline
+                fullWidth
+                rows={4}
+                value={`resource-pack=${result.download_url}\nresource-pack-sha1=${result.sha1}`}
+                InputProps={{
+                  readOnly: true,
+                  sx: { fontFamily: 'monospace', wordBreak: 'break-all' },
+                }}
+                sx={{ mb: 1 }}
+              />
+
+              <Box textAlign="right">
+                <Button
+                  onClick={() =>
+                    copyToClipboard(
+                      `resource-pack=${result.download_url}\nresource-pack-sha1=${result.sha1}`
+                    )
+                  }
+                  startIcon={<FileCopyIcon />}
+                >
+                  Копировать всё
+                </Button>
+              </Box>
+            </Box>
+          )}
         </Box>
-      )}
-    </Paper>
+      </Paper>
+    </motion.div>
   );
 };
